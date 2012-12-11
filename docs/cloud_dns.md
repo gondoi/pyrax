@@ -31,7 +31,24 @@ To get a list of all the domains that are manageable by your account, call the `
 
 This will return a list of `CloudDNSDomain` objects, with which you can then interact. It is a flat list: there is no hierarchical nesting of subdomains within their parent domains. Assuming that you have just started, you will get back an empty list. The next step would be to add your domains.
 
-You could have hundreds of domains, and by default this method will only return the first hundred domains. 
+
+### Paging
+You could have hundreds of domains, and by default the `list()` method will only return the first hundred domains. You can optionally pass in `limit` and `offset` parameters which will control the results returned by `dns.list()`.
+
+The `limit` parameter will determine how many records are returned, and must be a value between 1 and 100. If no `limit` is passed, a value of 100 will be used. The `offset` parameter determines where in the listing to begin when fetching. The value of `offset` defaults to 0 if not specified. Additionally, the value of `offset` must be either zero or a multiple of the limit. Together they enable paging across all of your domains.
+
+To make things easier, pyrax offers two convenience methods: `list_previous_page()` and `list_next_page()` for traversing your domain records. After the initial call to `list()`, you can then navigate through the pages of results with these methods. Each will raise a `NoMoreResults` exception when there are no additional pages of results to fetch. For example, assume that there are 15 domain records, and you want to show them in pages of up to 4 at a time. This code will do that for you:
+
+    domains = dns.list(limit=4)
+    print domains
+    while True:
+        try:
+            domains = dns.list_next_page()
+            print domains
+        except pyrax.exceptions.NoMoreResults:
+            break
+
+The same approach of using `offset` and `limit` will work with subdomains, records, and PTR records. The methods for the next and previous page of results have similar names, which are noted in their respective sections below.
 
 
 ## Adding Domains
