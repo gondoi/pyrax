@@ -15,6 +15,10 @@ from pyrax.clouddns import CloudDNSClient
 from pyrax.clouddns import CloudDNSDomain
 from pyrax.clouddns import CloudDNSManager
 from pyrax.clouddns import CloudDNSRecord
+from pyrax.clouddns import ResultsIterator
+from pyrax.clouddns import DomainResultsIterator
+from pyrax.clouddns import SubdomainResultsIterator
+from pyrax.clouddns import RecordResultsIterator
 import pyrax.exceptions as exc
 import pyrax.utils as utils
 
@@ -197,32 +201,6 @@ class CloudDNSTest(unittest.TestCase):
         clt = self.client
         mgr = clt._manager
         self.assertRaises(exc.NoMoreResults, clt.list_records_next_page)
-
-    def test_list_ptr_records_previous_page(self):
-        clt = self.client
-        mgr = clt._manager
-        mgr._paging["ptr"]["prev_uri"] = example_uri
-        mgr._list_ptr_records = Mock()
-        clt.list_ptr_records_previous_page()
-        mgr._list_ptr_records.assert_called_once_with(example_uri)
-
-    def test_list_ptr_records_previous_page_fail(self):
-        clt = self.client
-        mgr = clt._manager
-        self.assertRaises(exc.NoMoreResults, clt.list_ptr_records_previous_page)
-
-    def test_list_ptr_records_next_page(self):
-        clt = self.client
-        mgr = clt._manager
-        mgr._paging["ptr"]["next_uri"] = example_uri
-        mgr._list_ptr_records = Mock()
-        clt.list_ptr_records_next_page()
-        mgr._list_ptr_records.assert_called_once_with(example_uri)
-
-    def test_list_ptr_records_next_page_fail(self):
-        clt = self.client
-        mgr = clt._manager
-        self.assertRaises(exc.NoMoreResults, clt.list_ptr_records_next_page)
 
     def test_manager_get(self):
         ret_body = {"recordsList": {
@@ -677,6 +655,69 @@ class CloudDNSTest(unittest.TestCase):
         clt.method_get = Mock(return_value=({}, resp))
         ret = clt.get_rate_limits()
         self.assertEqual(ret, resp_limits)
+
+    def test_results_iterator(self):
+        clt = self.client
+        mgr = clt._manager
+        self.assertRaises(NotImplementedError, ResultsIterator, mgr)
+
+    def test_iter(self):
+        clt = self.client
+        mgr = clt._manager
+        res_iter = DomainResultsIterator(mgr)
+        ret = res_iter.__iter__()
+        self.assertTrue(ret is res_iter)
+
+    def test_iter_next(self):
+        clt = self.client
+        mgr = clt._manager
+        res_iter = DomainResultsIterator(mgr)
+        clt.method_get = Mock(return_value=({}, {"domains": []}))
+        self.assertRaises(StopIteration, res_iter.next)
+
+    def test_iter_items_first_fetch(self):
+        clt = self.client
+        mgr = clt._manager
+        fake_name = utils.random_name()
+        ret_body = {"domains": [{"name": fake_name}]}
+        clt.method_get = Mock(return_value=({}, ret_body))
+        res_iter = DomainResultsIterator(mgr)
+        ret = res_iter.next()
+        self.assertTrue(isinstance(ret, CloudDNSDomain))
+        clt.method_get.assert_called_once_with("/domains")
+
+    def test_iter_items_next_fetch(self):
+        clt = self.client
+        mgr = clt._manager
+        fake_name = utils.random_name()
+        ret_body = {"domains": [{"name": fake_name}]}
+        clt.method_get = Mock(return_value=({}, ret_body))
+        res_iter = DomainResultsIterator(mgr)
+        res_iter.next_uri = example_uri
+        ret = res_iter.next()
+        self.assertTrue(isinstance(ret, CloudDNSDomain))
+
+    def test_iter_items_next_stop(self):
+        clt = self.client
+        mgr = clt._manager
+        res_iter = DomainResultsIterator(mgr)
+        res_iter.next_uri = None
+        self.assertRaises(StopIteration, res_iter.next)
+
+    def test_subdomain_iter(self):
+        clt = self.client
+        mgr = clt._manager
+        res_iter = SubdomainResultsIterator(mgr)
+        self.assertEqual(res_iter.paging_service, "subdomain")
+
+    def test_record_iter(self):
+        clt = self.client
+        mgr = clt._manager
+        res_iter = RecordResultsIterator(mgr)
+        self.assertEqual(res_iter.paging_service, "record")
+
+
+
 
 
 if __name__ == "__main__":
