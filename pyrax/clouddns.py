@@ -42,6 +42,7 @@ def assure_domain(fnc):
     return _wrapped
 
 
+
 class CloudDNSRecord(BaseResource):
     """
     This class represents a domain record.
@@ -688,7 +689,19 @@ class CloudDNSManager(BaseManager):
         return (href, svc_name)
 
 
-    def list_ptr_records(self, device, device_type="server"):
+    def _resolve_device_type(self, device):
+        from tests.unit import fakes
+        if isinstance(device, (pyrax.CloudServer, fakes.FakeServer, fakes.FakeDNSDevice)):
+            device_type = "server"
+        elif isinstance(device, (pyrax.CloudLoadBalancer, fakes.FakeLoadBalancer)):
+            device_type = "loadbalancer"
+        else:
+            raise exc.InvalidDeviceType("The device '%s' must be a CloudServer or a CloudLoadBalancer." % device)
+        return device_type
+
+
+    def list_ptr_records(self, device):
+        device_type = self._resolve_device_type(device)
         href, svc_name = self._get_ptr_details(device, device_type)
         uri = "/rdns/%s?href=%s" % (svc_name, href)
         try:
@@ -698,10 +711,11 @@ class CloudDNSManager(BaseManager):
         return ret_body["records"]
 
 
-    def add_ptr_records(self, records, device, device_type="server"):
+    def add_ptr_records(self, records, device):
         """
         Adds one or more PTR records to the specified device.
         """
+        device_type = self._resolve_device_type(device)
         href, svc_name = self._get_ptr_details(device, device_type)
         if not isinstance(records, (list, tuple)):
             records = [records]
@@ -716,11 +730,12 @@ class CloudDNSManager(BaseManager):
         resp, ret_body = self.api.method_post(uri, body=body)
 
 
-    def update_ptr_record(self, record, device, device_type="server",
-            domain_name=None, data=None, ttl=None, comment=None):
+    def update_ptr_record(self, record, device, domain_name=None,
+            data=None, ttl=None, comment=None):
         """
         Updates a PTR record with the supplied values.
         """
+        device_type = self._resolve_device_type(device)
         href, svc_name = self._get_ptr_details(device, device_type)
         rec = {"name": domain_name,
               "id": utils.get_id(record),
@@ -745,11 +760,12 @@ class CloudDNSManager(BaseManager):
         return ret_body
 
 
-    def delete_ptr_records(self, device, device_type="server", ip_address=None):
+    def delete_ptr_records(self, device, ip_address=None):
         """
         Deletes the PTR records for the specified device. If 'ip_address' is supplied,
         only the PTR records with that IP address will be deleted.
         """
+        device_type = self._resolve_device_type(device)
         href, svc_name = self._get_ptr_details(device, device_type)
         uri = "/rdns/%s?href=%s" % (svc_name, href)
         if ip_address:
@@ -997,33 +1013,32 @@ class CloudDNSClient(BaseClient):
         return domain.delete_record(record)
 
 
-    def list_ptr_records(self, device, device_type="server"):
-        return self._manager.list_ptr_records(device, device_type=device_type)
+    def list_ptr_records(self, device):
+        return self._manager.list_ptr_records(device)
 
 
-    def add_ptr_records(self, records, device, device_type="server"):
+    def add_ptr_records(self, records, device):
         """
         Adds one or more PTR records to the specified device.
         """
-        return self._manager.add_ptr_records(records, device, device_type=device_type)
+        return self._manager.add_ptr_records(records, device)
 
 
-    def update_ptr_record(self, record, device, device_type="server", domain_name=None,
-            data=None, ttl=None, comment=None):
+    def update_ptr_record(self, record, device, domain_name=None, data=None,
+            ttl=None, comment=None):
         """
         Updates a PTR record with the supplied values.
         """
-        return self._manager.update_ptr_record(record, device, device_type=device_type,
-                domain_name=domain_name, data=data, ttl=ttl, comment=comment)
+        return self._manager.update_ptr_record(record, device, domain_name=domain_name,
+                data=data, ttl=ttl, comment=comment)
 
 
-    def delete_ptr_records(self, device, device_type="server", ip_address=None):
+    def delete_ptr_records(self, device, ip_address=None):
         """
         Deletes the PTR records for the specified device. If 'ip_address' is supplied,
         only the PTR records with that IP address will be deleted.
         """
-        return self._manager.delete_ptr_records(device, device_type=device_type,
-                ip_address=ip_address)
+        return self._manager.delete_ptr_records(device, ip_address=ip_address)
 
 
     def get_absolute_limits(self):

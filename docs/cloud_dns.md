@@ -143,6 +143,10 @@ To avoid that limitation, you can use the iterator:
 
 These will return objects you can iterate on to get all the subdomains or records for the specified domain 'dom'. Since each iterator is domain-specific, you don't have to be concerned about requests for different domains resetting the paging information.
 
+Please note that like all iterators, these are single-pass objects. Once a value has been returned, you cannot go "backwards" to get it again. Instead, you must re-create the iterator and start from the beginning again. If you need to have a list of all your domains/subdomains/records so that you can randomly access any of its members, cast the iterator to a list:
+
+    all_records = list(dns.get_record_iterator(dom))
+
 
 
 ## Adding DNS Records
@@ -256,10 +260,11 @@ Both will create the same output:
 
 
 
-## PTR Records
+## Reverse DNS (PTR) Records
+In computer networking, reverse DNS lookup or reverse DNS resolution (rDNS) is the determination of a domain name that is associated with a given IP address using the Domain Name Service (DNS) of the Internet. The process of reverse resolving an IP address uses the pointer DNS record type (PTR record). Cloud DNS supports the management of reverse DNS (PTR) records for Rackspace Cloud devices such as Cloud Load Balancers and Cloud Servers™.
 
-
-
+## Listing PTR Records
+To get the PTR records for a given device, you pass in a reference to the device
 
 
 

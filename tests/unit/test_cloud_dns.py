@@ -535,6 +535,22 @@ class CloudDNSTest(unittest.TestCase):
                 error_class=exc.DomainRecordDeletionFailed,
                 has_response=False)
 
+    def test_resolve_device_type(self):
+        clt = self.client
+        mgr = clt._manager
+        device = fakes.FakeDNSDevice()
+        typ = mgr._resolve_device_type(device)
+        self.assertEqual(typ, "server")
+        device = fakes.FakeLoadBalancer()
+        typ = mgr._resolve_device_type(device)
+        self.assertEqual(typ, "loadbalancer")
+
+    def test_resolve_device_type_invalid(self):
+        clt = self.client
+        mgr = clt._manager
+        device = object()
+        self.assertRaises(exc.InvalidDeviceType, mgr._resolve_device_type, device)
+
     def test_get_ptr_details_server(self):
         clt = self.client
         mgr = clt._manager

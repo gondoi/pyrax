@@ -77,6 +77,9 @@ class InvalidCredentialFile(PyraxException):
 class InvalidDateTimeString(PyraxException):
     pass
 
+class InvalidDeviceType(PyraxException):
+    pass
+
 class InvalidNodeCondition(PyraxException):
     pass
 

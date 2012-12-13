@@ -863,6 +863,7 @@ class CloudLoadBalancerManager(BaseManager):
         """
         Sets the connection logging for the given load balancer.
         """
+        uri = "/loadbalancers/%s/connectionlogging" % utils.get_id(loadbalancer)
         val = str(val).lower()
         req_body = {"connectionLogging": {
                 "enabled": val,
