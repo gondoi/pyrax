@@ -300,7 +300,9 @@ class CloudLoadBalancer(BaseResource):
 
     def get_error_page(self):
         """
-        Load Balancers all have a default error page that is shown to
+        Returns the current error page for the load balancer.
+
+        Load balancers all have a default error page that is shown to
         an end user who is attempting to access a load balancer node
         that is offline/unavailable.
         """
@@ -309,6 +311,8 @@ class CloudLoadBalancer(BaseResource):
 
     def set_error_page(self, html):
         """
+        Sets a custom error page for the load balancer.
+
         A single custom error page may be added per account load balancer
         with an HTTP protocol. Page updates will override existing content.
         If a custom error page is deleted, or the load balancer is changed
@@ -814,6 +818,9 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def get_session_persistence(self, loadbalancer):
+        """
+        Returns the session persistence setting for the given load balancer.
+        """
         uri = "/loadbalancers/%s/sessionpersistence" % utils.get_id(loadbalancer)
         resp, body = self.api.method_get(uri)
         ret = body["sessionPersistence"].get("persistenceType", "")
@@ -821,6 +828,9 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def set_session_persistence(self, loadbalancer, val):
+        """
+        Sets the session persistence for the given load balancer.
+        """
         val = val.upper()
         uri = "/loadbalancers/%s/sessionpersistence" % utils.get_id(loadbalancer)
         req_body = {"sessionPersistence": {
@@ -831,12 +841,18 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def delete_session_persistence(self, loadbalancer):
+        """
+        Removes the session persistence setting for the given load balancer.
+        """
         uri = "/loadbalancers/%s/sessionpersistence" % utils.get_id(loadbalancer)
         resp, body = self.api.method_delete(uri)
         return body
 
 
     def get_connection_logging(self, loadbalancer):
+        """
+        Returns the connection logging setting for the given load balancer.
+        """
         uri = "/loadbalancers/%s/connectionlogging" % utils.get_id(loadbalancer)
         resp, body = self.api.method_get(uri)
         ret = body.get("connectionLogging", {}).get("enabled", False)
@@ -844,7 +860,9 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def set_connection_logging(self, loadbalancer, val):
-        uri = "/loadbalancers/%s/connectionlogging" % utils.get_id(loadbalancer)
+        """
+        Sets the connection logging for the given load balancer.
+        """
         val = str(val).lower()
         req_body = {"connectionLogging": {
                 "enabled": val,
@@ -854,6 +872,9 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def get_content_caching(self, loadbalancer):
+        """
+        Returns the content caching setting for the given load balancer.
+        """
         uri = "/loadbalancers/%s/contentcaching" % utils.get_id(loadbalancer)
         resp, body = self.api.method_get(uri)
         ret = body.get("contentCaching", {}).get("enabled", False)
@@ -861,6 +882,9 @@ class CloudLoadBalancerManager(BaseManager):
 
 
     def set_content_caching(self, loadbalancer, val):
+        """
+        Sets the content caching for the given load balancer.
+        """
         uri = "/loadbalancers/%s/contentcaching" % utils.get_id(loadbalancer)
         val = str(val).lower()
         req_body = {"contentCaching": {
@@ -1072,6 +1096,8 @@ class CloudLoadBalancerClient(BaseClient):
     @property
     def allowed_domains(self):
         """
+        This property lists the allowed domains for a load balancer.
+
         The allowed domains are restrictions set for the allowed domain names
         used for adding load balancer nodes. In order to submit a domain name
         as an address for the load balancer node to add, the user must verify
@@ -1111,8 +1137,6 @@ class CloudLoadBalancerClient(BaseClient):
         return self._protocols
 
 
-    ## The following methods are conveniences that serve as
-    ## pass-through to the loadbalancer.
     @assure_loadbalancer
     def add_nodes(self, loadbalancer, nodes):
         """Adds the nodes to this load balancer."""

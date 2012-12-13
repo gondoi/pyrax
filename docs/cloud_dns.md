@@ -51,6 +51,23 @@ To make things easier, pyrax offers two convenience methods: `list_previous_page
 The same approach of using `offset` and `limit` will work with subdomains, records, and PTR records. The methods for the next and previous page of results have similar names, which are noted in their respective sections below.
 
 
+### Iterators
+To make working with large numbers of domains simpler, `pyrax` provides the `get_domain_iterator()` method. This will return an iterable object that will handle the paging requests for you, so you can treat them as a single request. For this example, assume that you have 250 domains named from 'example001.edu' to 'example250.edu'. Instead of the multiple commands you would need to use as in the example above, you can iterate through them in a single command:
+
+    for domain in dns.get_domain_iterator():
+        print domain.name
+
+This would print out:
+
+    example001.edu
+    example002.edu
+    ...
+    example249.edu
+    example250.edu
+
+There will be a slight delay when the end of a page of domains is reached and the next page is fetched, but it is no different than when you manually page through your domains.
+
+
 ## Adding Domains
 To create a domain, you would call the `dns.create()` method, supplying some or all of the following parameters:
 
@@ -75,6 +92,15 @@ Subdomains are conceptually the same as primary domains, but are a useful way of
 
 Subdomains in DNS are managed in separate zone files, so this means that there isn't an explicit linkage between a subdomain and the primary domain. Instead, the relationship is only implied, and is the result of the naming: `a.example.edu` is by definition a subdomain of `example.edu`; likewise, `b.a.example.edu` is a subdomain of `a.example.edu`.
 
+## Listing Subdomains
+To get a listing of all the subdomains for a given domain 'dom', call the `list_subdomains()` method:
+
+    subs = dom.list_subdomains()
+    # or
+    subs = dns.list_subdomains(dom)
+
+Both of the above will return the same information. 
+
 
 ## DNS Records
 Records specify information about the domain to which they belong. Rackspace Cloud DNS supports the following record types:
@@ -87,6 +113,36 @@ Records specify information about the domain to which they belong. Rackspace Clo
 * TXT
 * SRV
 * PTR
+
+
+## Listing DNS Records
+To get a listing of all the records for a given domain 'dom', call the `list_records()` method:
+
+    recs = dom.list_records()
+    # or
+    recs = dns.list_records(dom)
+
+Both of the above will return the same information. 
+
+
+### Paging Subdomains and Records
+Both the subdomain and record listing calls are subject to the same paging parameters as those for domain listing: 100 maximum per request. You can optionally specify the `limit` and `offset` parameters to get different blocks of subdomains, just as with domains. There are also the convenience methods for moving back and forth through the pages of results: 
+
+    * list_subdomains_previous_page()
+    * list_subdomains_next_page()
+    * list_records_previous_page()
+    * list_records_next_page()
+
+It should be noted that these methods work with a single domain at a time, so if you were to list subdomains or records of a different domain, the new paging information would override the old.
+
+To avoid that limitation, you can use the iterator:
+
+    sub_iter = dns.get_subdomain_iterator(dom)
+    # and
+    rec_iter = dns.get_record_iterator(dom)
+
+These will return objects you can iterate on to get all the subdomains or records for the specified domain 'dom'. Since each iterator is domain-specific, you don't have to be concerned about requests for different domains resetting the paging information.
+
 
 
 ## Adding DNS Records

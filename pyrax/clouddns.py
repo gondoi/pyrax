@@ -812,7 +812,7 @@ class CloudDNSClient(BaseClient):
         return self._manager.list_next_page()
 
 
-    def get_domain_iterator(self, limit=None, offset=None):
+    def get_domain_iterator(self):
         """
         Returns an iterator that will return each available domain. If there are
         more than the limit of 100 domains, the iterator will continue to fetch
