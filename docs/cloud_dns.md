@@ -121,8 +121,12 @@ To get a listing of all the records for a given domain 'dom', call the `list_rec
     recs = dom.list_records()
     # or
     recs = dns.list_records(dom)
+    
+    print recs
 
-Both of the above will return the same information. 
+Both of the above will return the same information: a series of `CloudDNSRecord` objects:
+
+    [<CloudDNSRecord created=2012-12-10T21:25:45.000+0000, data=example.edu, domain_id=3539045, id=CNAME-11284972, name=sample001.example.edu, ttl=3600, type=CNAME, updated=2012-12-10T21:25:45.000+0000>,     <CloudDNSRecord created=2012-12-10T21:25:47.000+0000, data=example.edu, domain_id=3539045, id=CNAME-11284973, name=sample002.example.edu, ttl=3600, type=CNAME, updated=2012-12-10T21:25:47.000+0000>,     <CloudDNSRecord created=2012-12-10T21:25:49.000+0000, data=example.edu, domain_id=3539045, id=CNAME-11284974, name=sample003.example.edu, ttl=3600, type=CNAME, updated=2012-12-10T21:25:49.000+0000>]
 
 
 ### Paging Subdomains and Records
@@ -170,9 +174,14 @@ Here is an example of adding an **A** and an **MX** record to a `CloudDNSDomain`
             "priority": 50,
             "comment": "Backup mail server"
             }]
-    dom.add_records(recs)
+    print dom.add_records(recs)
     # or
-    dns.add_records(dom, recs)
+    print dns.add_records(dom, recs)
+
+If the record addition succeeded, it will return a list of `CloudDNSRecord` objects representing the newly-added records:
+
+    [<CloudDNSRecord created=2012-12-17T21:30:56.000+0000, data=192.168.0.42, domain_id=3539045, id=A-9393844, name=example.edu, ttl=6000, type=A, updated=2012-12-17T21:30:56.000+0000>,
+     <CloudDNSRecord comment=Backup mail server, created=2012-12-17T21:30:57.000+0000, data=mail.example.edu, domain_id=3539045, id=MX-4184738, name=example.edu, priority=50, ttl=3600, type=MX, updated=2012-12-17T21:30:57.000+0000>]
 
 
 ## Adding Subdomains
@@ -258,6 +267,27 @@ Both will create the same output:
 
     example.edu.        3600    IN    SOA    ns.rackspace.com. sample.rackspace.edu. 1354918038 21600 3600 1814400 500    example.edu.        6000    IN    A    192.168.0.42    example.edu.        3600    IN    NS    dns1.stabletransit.com.    example.edu.        3600    IN    NS    dns2.stabletransit.com.    example.edu.        3600    IN    MX    50 mail.example.edu.
 
+
+# Updating a DNS Record
+The only attributes that you can modify on a record are the `data`, `priority` (for MX and SRV records), `TTL`, and `comment` attributes. If you have to modify anything else, the only option would be to delete the existing record and then create a new record with the desired settings.
+
+To update a record call its `update()` method, passing in the new values as keyword arguments. Alternatively, you can call the `update_record()` method of either the module or the domain to which the record belongs. As an example, assume we have a `CloudDNSDomain` object 'dom' and a `CloudDNSRecord` object 'rec'. All of the following statements will change the `TTL` for that record to 600 seconds:
+
+    rec.update(ttl=600)
+    # or
+    dom.update_record(rec, ttl=600)
+    # or
+    dns.update_record(dom, rec, ttl=600)
+
+
+## Deleting a DNS Record
+To delete a DNS record, call its `delete()` method, or call the `delete_record()` method of either the domain or the module. Assuming we have the 'dom' and 'rec' objects described above, all of the following will result in the record being deleted:
+
+    rec.delete()
+    # or
+    dom.delete_record(rec)
+    # or
+    dns.delete_record(dom, rec)
 
 
 ## Reverse DNS (PTR) Records

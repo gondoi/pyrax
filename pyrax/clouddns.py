@@ -19,6 +19,7 @@
 
 from functools import wraps
 import json
+import re
 import time
 
 import pyrax
@@ -48,6 +49,19 @@ class CloudDNSRecord(BaseResource):
     This class represents a domain record.
     """
     GET_DETAILS = False
+
+
+    def update(self, data=None, priority=None, ttl=None, comment=None):
+        """
+        Modifies this record.
+        """
+        return self.manager.update_record(self.domain_id, self, self.name, data=data,
+                priority=priority, ttl=ttl, comment=comment)
+
+
+    def delete(self):
+        return self.manager.delete_record(self.domain_id, self)
+
 
 
 class CloudDNSDomain(BaseResource):
@@ -153,18 +167,18 @@ class CloudDNSDomain(BaseResource):
             comment (optional)
             priority (required for MX and SRV records; forbidden otherwise)
         """
-        self.manager.add_records(self, records)
+        return self.manager.add_records(self, records)
 
     #Create an alias, so that adding a single record is more intuitive
     add_record = add_records
 
 
-    def update_record(self, record, name, data=None, priority=None,
+    def update_record(self, record, data=None, priority=None,
             ttl=None, comment=None):
         """
-        Modifie an existing record for this domain.
+        Modifies an existing record for this domain.
         """
-        return self.manager.update_record(self, record, name, data=data,
+        return self.manager.update_record(self, name, data=data,
                 priority=priority, ttl=ttl, comment=comment)
 
 
@@ -570,7 +584,13 @@ class CloudDNSManager(BaseManager):
     def _list_records(self, uri):
         resp, body = self.api.method_get(uri)
         self._reset_paging("record", body)
+        # The domain ID will be in the URL
+        pat = "domains/([^/]+)/records"
+        mtch = re.search(pat, uri)
+        dom_id = mtch.groups()[0]
         records = body.get("records", [])
+        for record in records:
+            record["domain_id"] = dom_id
         return [CloudDNSRecord(self, record, loaded=False)
                 for record in records if record]
 
@@ -610,7 +630,8 @@ class CloudDNSManager(BaseManager):
         if data:
             search_params.append("data=%s" % data)
         query_string = "&".join(search_params)
-        uri = "/domains/%s/records?type=%s" % (utils.get_id(domain), record_type)
+        dom_id = utils.get_id(domain)
+        uri = "/domains/%s/records?type=%s" % (dom_id, record_type)
         if query_string:
             uri = "%s&%s" % (uri, query_string)
         resp, body = self.api.method_get(uri)
@@ -621,6 +642,8 @@ class CloudDNSManager(BaseManager):
             resp, body = self.api.method_get(rec_paging.get("next_uri"))
             self._reset_paging("record", body)
             records.extend(body.get("records", []))
+        for record in records:
+            record["domain_id"] = dom_id
         return [CloudDNSRecord(self, record, loaded=False)
                 for record in records if record]
 
@@ -639,21 +662,26 @@ class CloudDNSManager(BaseManager):
         if isinstance(records, dict):
             # Single record passed
             records = [records]
-        uri = "/domains/%s/records" % utils.get_id(domain)
+        dom_id = utils.get_id(domain)
+        uri = "/domains/%s/records" % dom_id
         body = {"records": records}
         resp, ret_body = self._async_call(uri, method="POST", body=body,
                 error_class=exc.DomainRecordAdditionFailed, has_response=False)
-        return ret_body
+        records = ret_body.get("response", {}).get("records", [])
+        for record in records:
+            record["domain_id"] = dom_id
+        return [CloudDNSRecord(self, record, loaded=False)
+                for record in records if record]
         
 
-    def update_record(self, domain, record, name, data=None, priority=None,
+    def update_record(self, domain, record, data=None, priority=None,
             ttl=None, comment=None):
         """
         Modifies an existing record for a domain.
         """
         rec_id = utils.get_id(record)
         uri = "/domains/%s/records/%s" % (utils.get_id(domain), rec_id)
-        body = {"name": name}
+        body = {"name": record.name}
         all_opts = (("data", data), ("priority", priority), ("ttl", ttl), ("comment", comment))
         opts = [(k, v) for k, v in all_opts if v is not None]
         body.update(dict(opts))
@@ -999,12 +1027,12 @@ class CloudDNSClient(BaseClient):
 
 
     @assure_domain
-    def update_record(self, domain, record, name, data=None, priority=None,
+    def update_record(self, domain, record, data=None, priority=None,
             ttl=None, comment=None):
         """
         Modifies an existing record for a domain.
         """
-        return domain.update_record(record, name, data=data,
+        return domain.update_record(record, data=data,
                 priority=priority, ttl=ttl, comment=comment)
 
 
