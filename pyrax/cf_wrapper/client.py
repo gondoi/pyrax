@@ -753,6 +753,17 @@ class CFClient(object):
     user_agent = property(_get_user_agent, _set_user_agent)
 
 
+    def _get_http_log_debug(self):
+        return self._http_log_debug
+
+    def _set_http_log_debug(self, val):
+        self._http_log_debug = val
+        os.environ["SWIFTCLIENT_DEBUG"] = str(val)
+
+    http_log_debug = property(_get_http_log_debug, _set_http_log_debug, None,
+            """Determines if all http traffic is logged to the display for debugging.""")
+
+
 
 class Connection(_swift_client.Connection):
     """This class wraps the swiftclient connection, adding support for CDN"""
