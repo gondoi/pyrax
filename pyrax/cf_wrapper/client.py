@@ -893,8 +893,5 @@ class FolderUploader(threading.Thread):
     def run(self):
         """Starts the uploading thread."""
         root_path, folder_name = os.path.split(self.root_folder)
-        if self.container is None:
-            self.base_path = os.path.join(root_path, folder_name)
-        else:
-            self.base_path = root_path
+        self.base_path = os.path.join(root_path, folder_name)
         os.path.walk(self.root_folder, self.upload_files_in_folder, None)
