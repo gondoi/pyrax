@@ -264,7 +264,11 @@ Both will create the same output:
 In computer networking, reverse DNS lookup or reverse DNS resolution (rDNS) is the determination of a domain name that is associated with a given IP address using the Domain Name Service (DNS) of the Internet. The process of reverse resolving an IP address uses the pointer DNS record type (PTR record). Cloud DNS supports the management of reverse DNS (PTR) records for Rackspace Cloud devices such as Cloud Load Balancers and Cloud Servers™.
 
 ## Listing PTR Records
-To get the PTR records for a given device, you pass in a reference to the device
+To get the PTR records for a given device, call:
+
+    dns.list_ptr_records(device)
+
+
 
 
 
