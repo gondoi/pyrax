@@ -93,6 +93,9 @@ default_region = None
 # Some services require a region. If the user doesn't specify one, use DFW.
 FALLBACK_REGION = "DFW"
 
+# Do we output HTTP traffic for debugging?
+_http_debug = False
+
 
 def safe_region(region=None):
     """Value to use when no region is specified."""
@@ -129,6 +132,7 @@ if os.path.exists(config_file):
     default_identity_type = safe_get("settings", "identity_type") or (
             default_identity_type or "rackspace")
     app_agent = safe_get("settings", "custom_user_agent")
+    _http_debug = (safe_get("settings", "debug") or "False") == "True"
     if app_agent:
         # Customize the user-agent string with the app name.
         USER_AGENT = "%s/%s" % (app_agent, USER_AGENT)
@@ -306,7 +310,7 @@ def connect_to_cloudservers(region=None):
     cloudservers = _cs_client.Client(identity.username, identity.api_key,
             project_id=identity.tenant_name, auth_url=identity.auth_endpoint,
             bypass_url=mgt_url, auth_system="rackspace",
-#            http_log_debug=True,
+            http_log_debug=_http_debug,
             region_name=region, service_type="compute")
     cloudservers.client.USER_AGENT = _make_agent_name(cloudservers.client.USER_AGENT)
     cloudservers.exceptions = _cs_exceptions
@@ -330,7 +334,7 @@ def connect_to_cloudfiles(region=None, public=True):
     cloudfiles = _cf.CFClient(identity.auth_endpoint, identity.username, identity.api_key,
             tenant_name=identity.tenant_name, preauthurl=cf_url, preauthtoken=identity.token,
             auth_version="2", os_options=opts,
-#            http_log_debug=True,
+            http_log_debug=_http_debug,
             )
     cloudfiles.user_agent = _make_agent_name(cloudfiles.user_agent)
     return cloudfiles
@@ -343,7 +347,7 @@ def connect_to_cloud_databases(region=None):
     ep = _get_service_endpoint("database", region)
     cloud_databases = CloudDatabaseClient(identity.username, identity.api_key,
             region_name=region, management_url=ep, auth_token=identity.token,
-#            http_log_debug=True,
+            http_log_debug=_http_debug,
             tenant_id=identity.tenant_id, service_type="rax:database")
     cloud_databases.user_agent = _make_agent_name(cloud_databases.user_agent)
     return cloud_databases
@@ -356,7 +360,7 @@ def connect_to_cloud_loadbalancers(region=None):
     ep = _get_service_endpoint("load_balancer", region)
     cloud_loadbalancers = CloudLoadBalancerClient(identity.username, identity.api_key,
             region_name=region, management_url=ep, auth_token=identity.token,
-#            http_log_debug=True,
+            http_log_debug=_http_debug,
             tenant_id=identity.tenant_id, service_type="rax:load-balancer")
     cloud_loadbalancers.user_agent = _make_agent_name(cloud_loadbalancers.user_agent)
     return cloud_loadbalancers
@@ -369,7 +373,7 @@ def connect_to_cloud_blockstorage(region=None):
     ep = _get_service_endpoint("volume", region)
     cloud_blockstorage = CloudBlockStorageClient(identity.username, identity.api_key,
             region_name=region, management_url=ep, auth_token=identity.token,
-#            http_log_debug=True,
+            http_log_debug=_http_debug,
             tenant_id=identity.tenant_id, service_type="volume")
     cloud_blockstorage.user_agent = _make_agent_name(cloud_blockstorage.user_agent)
     return cloud_blockstorage
@@ -382,7 +386,19 @@ def connect_to_cloud_dns(region=None):
     ep = _get_service_endpoint("dns", region)
     cloud_dns = CloudDNSClient(identity.username, identity.api_key,
             region_name=region, management_url=ep, auth_token=identity.token,
-            http_log_debug=True,
+            http_log_debug=_http_debug,
             tenant_id=identity.tenant_id, service_type="rax:dns")
     cloud_dns.user_agent = _make_agent_name(cloud_dns.user_agent)
     return cloud_dns
+
+
+def get_http_debug():
+    return _http_debug
+
+def set_http_debug(val):
+    global _http_debug
+    _http_debug = val
+    # Set debug on the various services
+    for svc in (cloudservers, cloudfiles, cloud_loadbalancers, cloud_blockstorage,
+            cloud_databases, cloud_dns):
+        svc.http_log_debug = val

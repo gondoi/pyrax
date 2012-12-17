@@ -105,10 +105,9 @@ class BaseClient(httplib2.Http):
         self.auth_system = auth_system
 
         self._logger = logging.getLogger(__name__)
-        if self.http_log_debug:
-            ch = logging.StreamHandler()
-            self._logger.setLevel(logging.DEBUG)
-            self._logger.addHandler(ch)
+        ch = logging.StreamHandler()
+        self._logger.setLevel(logging.DEBUG)
+        self._logger.addHandler(ch)
         self._manager = None
         # Hook method for subclasses to create their manager instance
         # without having to override __init__().
