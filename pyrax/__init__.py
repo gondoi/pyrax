@@ -262,6 +262,7 @@ def connect_to_services():
     cloud_loadbalancers = connect_to_cloud_loadbalancers()
     cloud_databases = connect_to_cloud_databases()
     cloud_blockstorage = connect_to_cloud_blockstorage()
+    cloud_dns = connect_to_cloud_dns()
 
 
 def _fix_uri(ep, region):

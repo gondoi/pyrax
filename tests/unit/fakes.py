@@ -343,9 +343,6 @@ identity_type = rackspace
 region = FAKE
 custom_user_agent = FAKE
 debug =
-
-[services]
-servers = True
 """
 
 fake_identity_response = {u'access':
