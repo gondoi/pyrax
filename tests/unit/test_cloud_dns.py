@@ -511,14 +511,15 @@ class CloudDNSTest(unittest.TestCase):
         clt = self.client
         mgr = clt._manager
         dom = self.domain
-        rec = CloudDNSRecord(mgr, {"id": utils.random_name()})
+        nm = utils.random_name()
+        rec = fakes.FakeDNSRecord(mgr, {"id": utils.random_name(),
+                "name": nm})
         ttl = 9999
         data = "0.0.0.0"
-        nm = "example.com"
         mgr._async_call = Mock(return_value=({}, {}))
         uri = "/domains/%s/records/%s" % (utils.get_id(dom), utils.get_id(rec))
         req_body = {"name": nm, "data": data, "ttl": ttl}
-        clt.update_record(dom, rec, nm, data=data, ttl=ttl)
+        clt.update_record(dom, rec, data=data, ttl=ttl)
         mgr._async_call.assert_called_once_with(uri, method="PUT",
                 body=req_body, error_class=exc.DomainRecordUpdateFailed,
                 has_response=False)
@@ -615,7 +616,7 @@ class CloudDNSTest(unittest.TestCase):
         uri = "/rdns"
         mgr._get_ptr_details = Mock(return_value=(href, svc_name))
         clt.method_post = Mock(return_value=({}, {"records": []}))
-        clt.add_ptr_records(rec, dvc)
+        clt.add_ptr_records(dvc, rec)
         clt.method_post.assert_called_once_with(uri, body=body)
 
     def test_update_ptr_record(self):
@@ -636,7 +637,7 @@ class CloudDNSTest(unittest.TestCase):
         body = {"recordsList": {"records": [rec]}, "link": {"content": "", "href": href, "rel": svc_name}}
         mgr._get_ptr_details = Mock(return_value=(href, svc_name))
         clt.method_put = Mock(return_value=({}, {"records": []}))
-        clt.update_ptr_record(ptr_record, dvc, domain_name=nm, data=data, ttl=ttl,
+        clt.update_ptr_record(dvc, ptr_record, domain_name=nm, data=data, ttl=ttl,
                 comment=long_comment)
         clt.method_put.assert_called_once_with(uri, body=body)
 

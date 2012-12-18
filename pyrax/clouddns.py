@@ -178,7 +178,7 @@ class CloudDNSDomain(BaseResource):
         """
         Modifies an existing record for this domain.
         """
-        return self.manager.update_record(self, name, data=data,
+        return self.manager.update_record(self, record, data=data,
                 priority=priority, ttl=ttl, comment=comment)
 
 
@@ -739,7 +739,7 @@ class CloudDNSManager(BaseManager):
         return ret_body["records"]
 
 
-    def add_ptr_records(self, records, device):
+    def add_ptr_records(self, device, records):
         """
         Adds one or more PTR records to the specified device.
         """
@@ -758,8 +758,8 @@ class CloudDNSManager(BaseManager):
         resp, ret_body = self.api.method_post(uri, body=body)
 
 
-    def update_ptr_record(self, record, device, domain_name=None,
-            data=None, ttl=None, comment=None):
+    def update_ptr_record(self, device, record, domain_name, data=None,
+            ttl=None, comment=None):
         """
         Updates a PTR record with the supplied values.
         """
@@ -1045,19 +1045,19 @@ class CloudDNSClient(BaseClient):
         return self._manager.list_ptr_records(device)
 
 
-    def add_ptr_records(self, records, device):
+    def add_ptr_records(self, device, records):
         """
         Adds one or more PTR records to the specified device.
         """
-        return self._manager.add_ptr_records(records, device)
+        return self._manager.add_ptr_records(device, records)
 
 
-    def update_ptr_record(self, record, device, domain_name=None, data=None,
+    def update_ptr_record(self, device, record, domain_name, data=None,
             ttl=None, comment=None):
         """
         Updates a PTR record with the supplied values.
         """
-        return self._manager.update_ptr_record(record, device, domain_name=domain_name,
+        return self._manager.update_ptr_record(device, record, domain_name,
                 data=data, ttl=ttl, comment=comment)
 
 

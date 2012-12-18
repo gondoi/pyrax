@@ -88,7 +88,7 @@ The `create()` command returns an instance of a `CloudDNSDomain` object:
 
 
 ## Subdomains
-Subdomains are conceptually the same as primary domains, but are a useful way of addressing multiple related devices without requiring each to have its own domain name. You create a subdomain just like creating a primary domain: by calling `dns.create()`, but with the `name` parameter replaced with the **FQDN** (Fully-Qualified Domain Name) of the subdomain.
+Subdomains are conceptually the same as primary domains, but are a useful way of addressing multiple related devices without requiring each to have its own domain name. You create a subdomain just like creating a primary domain: by calling `dns.create()`, but with the `name` parameter replaced with the **FQDN** (Fully-Qualified Domain Name) of the subdomain. The same holds true for `update()` and `delete()`.
 
 Subdomains in DNS are managed in separate zone files, so this means that there isn't an explicit linkage between a subdomain and the primary domain. Instead, the relationship is only implied, and is the result of the naming: `a.example.edu` is by definition a subdomain of `example.edu`; likewise, `b.a.example.edu` is a subdomain of `a.example.edu`.
 
@@ -293,14 +293,55 @@ To delete a DNS record, call its `delete()` method, or call the `delete_record()
 ## Reverse DNS (PTR) Records
 In computer networking, reverse DNS lookup or reverse DNS resolution (rDNS) is the determination of a domain name that is associated with a given IP address using the Domain Name Service (DNS) of the Internet. The process of reverse resolving an IP address uses the pointer DNS record type (PTR record). Cloud DNS supports the management of reverse DNS (PTR) records for Rackspace Cloud devices such as Cloud Load Balancers and Cloud Servers™.
 
+
 ## Listing PTR Records
 To get the PTR records for a given device, call:
 
-    dns.list_ptr_records(device)
+    print dns.list_ptr_records(device)
+
+This will return a list of dicts, with each dict representing the information in a single PTR record.
+
+    [{u'updated': u'2012-02-15T20:54:28.000+0000', u'name': u'1-2-3-4.static.rackspacecloud.com', u'created': u'2012-02-15T20:54:28.000+0000', u'type': u'PTR', u'ttl': 300, u'data': u'1.2.3.4', u'id': u'PTR-228035'}]
 
 
+## Adding PTR Records
+To add PTR records for a device, you call the `dns.add_ptr_records()` method, passing in the data for each record in dict form. Here is an example of adding reverse DNS for a Cloud Server for both IPv4 and IPv6:
+
+    recs = [{"name": "example.edu",
+            "type": "PTR",
+            "data": "1.2.3.4",
+            "ttl": 7200},
+            {"name": "example.edu",
+            "type": "PTR",
+            "data": "2001:db8::7",
+            "ttl": 7200}
+            ]
+    server = pyrax.cloudservers.servers.get(id_of_server)
+    dns.add_ptr_records(server, recs)
+
+The following table lists both the required and optional keys for a PTR record:
+
+Name | Description | Required---- | ---- | ----type | Specifies the record type as "PTR". | Yesname | Specifies the name for the domain or subdomain. Must be a valid domain name. | Yesdata | The data field for PTR records must be a valid IPv4 or IPv6 IP address. | Yesttl | If specified, must be greater than 300. Defaults to 3600 if no TTL is specified. | Nocomment | If included, its length must be less than or equal to 160 characters. | No
 
 
+## Updating PTR Records
+You can modify the `TTL` or `comment` for an existing PTR record by calling the `update_ptr_record()` method of the module, and passing in a reference to the device and the domain name, along with the updated record values as keyword arguments. You must supply the `domain_name` and `ip_address` parameters, and they must match the values in the existing record. Changing the domain name or IP address is not allowed. If you need to change either of those, you must delete the records and then re-create them with the new domain name.
 
+Name | Description | Required---- | ---- | ----device | A reference to the Cloud Server or Cloud Load Balancer object that this PTR record is for | Yesdomain_name | Specifies the name for the domain or subdomain. Must be a valid domain name. Cannot be modified. | Yesdata | The data field is required for PTR records and must be a valid IPv4 or IPv6 IP address. | Yesttl | If specified, must be greater than 300. Defaults to 3600 if no TTL is specified. | Nocomment | If included, its length must be less than or equal to 160 characters. | No
+
+As an example, here is how you would change the TTL of a server whose domain name is "example.edu":
+
+    server = pyrax.cloudservers.servers.get(id_of_server)
+    dns.update_ptr_record(server, "example.edu", "1.2.3.4", ttl=9600)
+
+
+## Deleting PTR Records
+You may delete one or all of the PTR records for a given device by calling the `delete_ptr_records()` method and passing in the device reference. All PTR records for a device will be deleted if you only pass the device reference. However, if you specify an IP address, only the record for that address will be deleted.
+
+    server = pyrax.cloudservers.servers.get(id_of_server)
+    # To delete just one PTR record:
+    dns.delete_ptr_records(server, ip_address="1.2.3.4")
+    # To delete all PTR records for the device:
+    dns.delete_ptr_records(server)
 
 

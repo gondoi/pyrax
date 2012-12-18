@@ -20,10 +20,14 @@ from pyrax.cloudloadbalancers import VirtualIP
 from pyrax.clouddns import CloudDNSClient
 from pyrax.clouddns import CloudDNSDomain
 from pyrax.clouddns import CloudDNSManager
+from pyrax.clouddns import CloudDNSRecord
 
 import pyrax.exceptions as exc
 from pyrax.rax_identity import Identity
 import pyrax.utils as utils
+
+
+example_uri = "http://example.com"
 
 
 class FakeResponse(dict):
@@ -216,6 +220,11 @@ class FakeDNSDomain(CloudDNSDomain):
         self.id = utils.random_name()
         self.name = utils.random_name()
         self.manager = FakeDNSManager()
+
+
+class FakeDNSRecord(CloudDNSRecord):
+    def __init__(self, mgr, info, *args, **kwargs):
+        super(FakeDNSRecord, self).__init__(mgr, info, *args, **kwargs)
 
 
 class FakeDNSDevice(FakeEntity):
